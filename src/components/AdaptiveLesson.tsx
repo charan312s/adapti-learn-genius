@@ -1,109 +1,207 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import type { LearningStyle } from "@/types/learning";
+import type { LearningLevel, LearningStyle } from "@/types/learning";
 import { toast } from "sonner";
 
 interface AdaptiveLessonProps {
+  level: LearningLevel;
   style: LearningStyle;
+  onComplete: (levelId: number, score: number, attempts: number) => void;
 }
 
-type Question = {
-  prompt: string;
-  options: string[];
-  answerIndex: number;
-};
-
-type Difficulty = 1 | 2 | 3;
-
-const QUESTIONS: Record<Difficulty, Question> = {
-  1: {
-    prompt: "What is 1/2 of 8?",
-    options: ["2", "3", "4", "6"],
-    answerIndex: 2,
-  },
-  2: {
-    prompt: "Which fraction is larger?",
-    options: ["3/5", "2/3"],
-    answerIndex: 1, // 2/3 ~ 0.666 > 3/5 = 0.6
-  },
-  3: {
-    prompt: "What is 3/4 + 2/8?",
-    options: ["5/8", "1", "7/8"],
-    answerIndex: 1,
-  },
-};
-
-function getInitialDifficulty(): Difficulty {
-  const saved = Number(localStorage.getItem("difficulty") || 1);
-  return (Math.min(3, Math.max(1, saved)) as Difficulty) || 1;
-}
-
-const AdaptiveLesson = ({ style }: AdaptiveLessonProps) => {
-  const [difficulty, setDifficulty] = useState<Difficulty>(getInitialDifficulty());
+const AdaptiveLesson = ({ level, style, onComplete }: AdaptiveLessonProps) => {
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [result, setResult] = useState<string>("");
-  const streakRef = useRef(0);
+  const [score, setScore] = useState(0);
+  const [attempts, setAttempts] = useState(0);
+  const [showExplanation, setShowExplanation] = useState(false);
+  const [levelCompleted, setLevelCompleted] = useState(false);
 
-  useEffect(() => {
-    localStorage.setItem("difficulty", String(difficulty));
-  }, [difficulty]);
-
-  const question = useMemo(() => QUESTIONS[difficulty], [difficulty]);
+  const currentQuestion = level.questions[currentQuestionIndex];
+  const isLastQuestion = currentQuestionIndex === level.questions.length - 1;
 
   const submit = () => {
     if (selected === null) return;
-    const correct = selected === question.answerIndex;
-    setResult(correct ? "Correct!" : "Not quite—try again.");
+    
+    setAttempts(attempts + 1);
+    const correct = selected === currentQuestion.answerIndex;
+    
     if (correct) {
-      toast.success("Nice work! Difficulty adjusted.");
-      streakRef.current += 1;
-      if (streakRef.current >= 2 && difficulty < 3) {
-        setDifficulty((d) => ((d + 1) as Difficulty));
-        streakRef.current = 0;
-      }
+      setScore(score + 1);
+      setResult("Correct!");
+      toast.success("Great job! That's correct.");
+      setShowExplanation(true);
     } else {
-      toast.error("We'll make it a bit easier for now.");
-      streakRef.current = 0;
-      if (difficulty > 1) setDifficulty((d) => ((d - 1) as Difficulty));
+      setResult("Not quite—try again.");
+      toast.error("Not quite right. Try again!");
+      setShowExplanation(false);
     }
+  };
+
+  const nextQuestion = () => {
+    if (isLastQuestion) {
+      // Level completed
+      setLevelCompleted(true);
+      onComplete(level.id, score + 1, attempts);
+    } else {
+      // Move to next question
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+      setSelected(null);
+      setResult("");
+      setShowExplanation(false);
+    }
+  };
+
+  const retryQuestion = () => {
+    setSelected(null);
+    setResult("");
+    setShowExplanation(false);
   };
 
   // Content by learning style
   const ReadingBlock = (
     <div className="prose prose-sm dark:prose-invert max-w-none">
-      <p>
-        Fractions represent a part of a whole. For example, 1/2 means one of two
-        equal parts. To compare fractions like 2/3 and 3/5, bring them to a
-        common baseline by comparing decimal values (≈0.67 vs 0.6) or by
-        cross-multiplying (2×5 vs 3×3).
-      </p>
-      <ul>
-        <li>Add with common denominators: 2/8 + 3/8 = 5/8.</li>
-        <li>Convert when needed: 2/8 + 1/4 → 2/8 + 2/8 = 4/8 = 1/2.</li>
-      </ul>
+      {level.id === 1 && (
+        <>
+          <p>
+            Fractions represent a part of a whole. For example, 1/2 means one of two
+            equal parts. To compare fractions like 2/3 and 3/5, bring them to a
+            common baseline by comparing decimal values (≈0.67 vs 0.6) or by
+            cross-multiplying (2×5 vs 3×3).
+          </p>
+          <ul>
+            <li>Add with common denominators: 2/8 + 3/8 = 5/8.</li>
+            <li>Convert when needed: 2/8 + 1/4 → 2/8 + 2/8 = 4/8 = 1/2.</li>
+          </ul>
+        </>
+      )}
+      {level.id === 2 && (
+        <>
+          <p>
+            Comparing fractions requires understanding their relative sizes. There are several methods:
+          </p>
+          <ul>
+            <li><strong>Decimal conversion:</strong> Convert to decimals (1/4 = 0.25, 1/3 ≈ 0.33)</li>
+            <li><strong>Cross multiplication:</strong> Compare a/b vs c/d by checking if a×d &gt; b×c</li>
+            <li><strong>Common denominator:</strong> Find equivalent fractions with same denominator</li>
+          </ul>
+        </>
+      )}
+      {level.id === 3 && (
+        <>
+          <p>
+            Adding fractions follows specific rules based on denominators:
+          </p>
+          <ul>
+            <li><strong>Same denominators:</strong> Add numerators, keep denominator (1/4 + 2/4 = 3/4)</li>
+            <li><strong>Different denominators:</strong> Find common denominator first</li>
+            <li><strong>Mixed numbers:</strong> Convert to improper fractions, then add</li>
+          </ul>
+        </>
+      )}
+      {level.id === 4 && (
+        <>
+          <p>
+            Advanced fraction operations combine multiple concepts:
+          </p>
+          <ul>
+            <li><strong>Multiplication:</strong> Multiply numerators and denominators separately</li>
+            <li><strong>Division:</strong> Multiply by the reciprocal (a/b ÷ c/d = a/b × d/c)</li>
+            <li><strong>Complex expressions:</strong> Use order of operations (PEMDAS)</li>
+          </ul>
+        </>
+      )}
     </div>
   );
 
   const VisualBlock = (
     <div className="grid gap-4">
-      <svg viewBox="0 0 100 100" className="w-full max-w-xs">
-        <defs>
-          <linearGradient id="g" x1="0" x2="1">
-            <stop offset="0%" stopColor={`hsl(var(--primary))`} />
-            <stop offset="100%" stopColor={`hsl(var(--primary-glow))`} />
-          </linearGradient>
-        </defs>
-        <circle cx="50" cy="50" r="45" fill="#eee" />
-        <path d="M50,50 L50,5 A45,45 0 0,1 95,50 Z" fill="url(#g)" />
-        <text x="50" y="55" textAnchor="middle" fontSize="12" fill="currentColor">
-          1/4 shaded
-        </text>
-      </svg>
-      <p className="text-sm text-muted-foreground max-w-prose">
-        Visualizing parts of a whole helps build intuition. Here, a quarter of
-        the circle is shaded.
-      </p>
+      {level.id === 1 && (
+        <>
+          <svg viewBox="0 0 100 100" className="w-full max-w-xs">
+            <defs>
+              <linearGradient id="g" x1="0" x2="1">
+                <stop offset="0%" stopColor={`hsl(var(--primary))`} />
+                <stop offset="100%" stopColor={`hsl(var(--primary-glow))`} />
+              </linearGradient>
+            </defs>
+            <circle cx="50" cy="50" r="45" fill="#eee" />
+            <path d="M50,50 L50,5 A45,45 0 0,1 95,50 Z" fill="url(#g)" />
+            <text x="50" y="55" textAnchor="middle" fontSize="12" fill="currentColor">
+              1/4 shaded
+            </text>
+          </svg>
+          <p className="text-sm text-muted-foreground max-w-prose">
+            Visualizing parts of a whole helps build intuition. Here, a quarter of
+            the circle is shaded.
+          </p>
+        </>
+      )}
+      {level.id === 2 && (
+        <>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center">
+              <div className="w-20 h-20 mx-auto bg-blue-200 rounded-lg flex items-center justify-center text-lg font-bold">
+                3/5
+              </div>
+              <p className="text-xs mt-2">Decimal: 0.6</p>
+            </div>
+            <div className="text-center">
+              <div className="w-20 h-20 mx-auto bg-green-200 rounded-lg flex items-center justify-center text-lg font-bold">
+                2/3
+              </div>
+              <p className="text-xs mt-2">Decimal: 0.67</p>
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground text-center">
+            Visual comparison shows 2/3 is larger than 3/5
+          </p>
+        </>
+      )}
+      {level.id === 3 && (
+        <>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto bg-blue-200 rounded flex items-center justify-center text-sm">
+                1/4
+              </div>
+            </div>
+            <div className="text-center flex items-center justify-center text-2xl">
+              +
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto bg-blue-200 rounded flex items-center justify-center text-sm">
+                1/4
+              </div>
+            </div>
+          </div>
+          <div className="text-center mt-2">
+            <div className="w-20 h-16 mx-auto bg-green-200 rounded flex items-center justify-center text-sm font-bold">
+              2/4 = 1/2
+            </div>
+          </div>
+        </>
+      )}
+      {level.id === 4 && (
+        <>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center">
+              <div className="w-20 h-20 mx-auto bg-purple-200 rounded-lg flex items-center justify-center text-sm">
+                1/2 × 3/4
+              </div>
+              <p className="text-xs mt-2">Multiply numerators and denominators</p>
+            </div>
+            <div className="text-center">
+              <div className="w-20 h-20 mx-auto bg-orange-200 rounded-lg flex items-center justify-center text-sm">
+                3/8
+              </div>
+              <p className="text-xs mt-2">Result</p>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 
@@ -111,27 +209,107 @@ const AdaptiveLesson = ({ style }: AdaptiveLessonProps) => {
   const [d, setD] = useState(4);
   const KinestheticBlock = (
     <div className="grid gap-3">
-      <div className="flex items-center gap-3">
-        <label className="text-sm">Numerator</label>
-        <input type="range" min={0} max={d} value={n} onChange={(e) => setN(Number(e.target.value))} />
-      </div>
-      <div className="flex items-center gap-3">
-        <label className="text-sm">Denominator</label>
-        <input
-          type="range"
-          min={1}
-          max={12}
-          value={d}
-          onChange={(e) => {
-            const nd = Number(e.target.value);
-            setD(nd);
-            if (n > nd) setN(nd);
-          }}
-        />
-      </div>
-      <div className="rounded-lg border p-3 text-sm">
-        Fraction: {n}/{d} ≈ {(n / d).toFixed(2)}
-      </div>
+      {level.id === 1 && (
+        <>
+          <div className="flex items-center gap-3">
+            <label className="text-sm">Numerator</label>
+            <input type="range" min={0} max={d} value={n} onChange={(e) => setN(Number(e.target.value))} />
+          </div>
+          <div className="flex items-center gap-3">
+            <label className="text-sm">Denominator</label>
+            <input
+              type="range"
+              min={1}
+              max={12}
+              value={d}
+              onChange={(e) => {
+                const nd = Number(e.target.value);
+                setD(nd);
+                if (n > nd) setN(nd);
+              }}
+            />
+          </div>
+          <div className="rounded-lg border p-3 text-sm">
+            Fraction: {n}/{d} ≈ {(n / d).toFixed(2)}
+          </div>
+        </>
+      )}
+      {level.id === 2 && (
+        <>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm block mb-2">First Fraction</label>
+              <div className="flex gap-2">
+                <input type="number" min="1" max="10" className="w-16 px-2 py-1 border rounded" placeholder="num" />
+                <span className="text-lg">/</span>
+                <input type="number" min="1" max="10" className="w-16 px-2 py-1 border rounded" placeholder="den" />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm block mb-2">Second Fraction</label>
+              <div className="flex gap-2">
+                <input type="number" min="1" max="10" className="w-16 px-2 py-1 border rounded" placeholder="num" />
+                <span className="text-lg">/</span>
+                <input type="number" min="1" max="10" className="w-16 px-2 py-1 border rounded" placeholder="den" />
+              </div>
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground text-center">
+            Adjust the fractions to see which is larger
+          </p>
+        </>
+      )}
+      {level.id === 3 && (
+        <>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm block mb-2">First Fraction</label>
+              <div className="flex gap-2">
+                <input type="number" min="1" max="8" className="w-16 px-2 py-1 border rounded" placeholder="num" />
+                <span className="text-lg">/</span>
+                <input type="number" min="1" max="8" className="w-16 px-2 py-1 border rounded" placeholder="den" />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm block mb-2">Second Fraction</label>
+              <div className="flex gap-2">
+                <input type="number" min="1" max="8" className="w-16 px-2 py-1 border rounded" placeholder="num" />
+                <span className="text-lg">/</span>
+                <input type="number" min="1" max="8" className="w-16 px-2 py-1 border rounded" placeholder="den" />
+              </div>
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground text-center">
+            Practice adding fractions with different denominators
+          </p>
+        </>
+      )}
+      {level.id === 4 && (
+        <>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm block mb-2">First Fraction</label>
+              <div className="flex gap-2">
+                <input type="number" min="1" max="10" className="w-16 px-2 py-1 border rounded" placeholder="num" />
+                <span className="text-lg">/</span>
+                <input type="number" min="1" max="10" className="w-16 px-2 py-1 border rounded" placeholder="den" />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm block mb-2">Operation</label>
+              <select className="w-full px-2 py-1 border rounded">
+                <option>×</option>
+                <option>÷</option>
+                <option>+</option>
+                <option>-</option>
+              </select>
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground text-center">
+            Practice different fraction operations
+          </p>
+        </>
+      )}
     </div>
   );
 
@@ -144,8 +322,18 @@ const AdaptiveLesson = ({ style }: AdaptiveLessonProps) => {
         setSpeaking(false);
         return;
       }
-      const text =
-        "Fractions represent parts of a whole. One half means one out of two equal parts. Compare by converting to decimals or using cross multiplication.";
+      
+      let text = "";
+      if (level.id === 1) {
+        text = "Fractions represent parts of a whole. One half means one out of two equal parts. Compare by converting to decimals or using cross multiplication.";
+      } else if (level.id === 2) {
+        text = "To compare fractions, convert them to decimals or find a common denominator. For example, 2/3 is larger than 3/5 because 0.67 is greater than 0.6.";
+      } else if (level.id === 3) {
+        text = "When adding fractions, first ensure they have the same denominator. Add the numerators and keep the denominator. Simplify the result if possible.";
+      } else if (level.id === 4) {
+        text = "For multiplication, multiply numerators and denominators separately. For division, multiply by the reciprocal of the second fraction.";
+      }
+      
       const u = new SpeechSynthesisUtterance(text);
       speechUtterance.current = u;
       u.onend = () => setSpeaking(false);
@@ -161,50 +349,131 @@ const AdaptiveLesson = ({ style }: AdaptiveLessonProps) => {
       <Button onClick={playNarration} variant="secondary">
         {speaking ? "Stop narration" : "Play narration"}
       </Button>
-      <p className="text-sm text-muted-foreground">Use headphones for best focus.</p>
+      <p className="text-sm text-muted-foreground">
+        {level.id === 1 && "Listen to fraction basics explained"}
+        {level.id === 2 && "Hear fraction comparison methods"}
+        {level.id === 3 && "Learn fraction addition rules"}
+        {level.id === 4 && "Understand advanced operations"}
+      </p>
     </div>
   );
 
-  const content = {
-    visual: VisualBlock,
-    auditory: AuditoryBlock,
-    reading: ReadingBlock,
-    kinesthetic: KinestheticBlock,
-  }[style];
+  // Alternative content selection method
+  let selectedContent;
+  switch (style) {
+    case 'visual':
+      selectedContent = VisualBlock;
+      break;
+    case 'auditory':
+      selectedContent = AuditoryBlock;
+      break;
+    case 'reading':
+      selectedContent = ReadingBlock;
+      break;
+    case 'kinesthetic':
+      selectedContent = KinestheticBlock;
+      break;
+    default:
+      selectedContent = null;
+  }
+
+  // Fallback content if style is not found
+  const fallbackContent = (
+    <div className="p-4 border rounded-lg bg-yellow-50">
+      <p className="text-sm text-yellow-800">
+        <strong>Debug:</strong> Learning style "{style}" not found. Available styles: visual, auditory, reading, kinesthetic
+      </p>
+      <p className="text-sm text-yellow-700 mt-2">
+        Current content: {selectedContent ? 'Found' : 'Not found'}
+      </p>
+    </div>
+  );
+
+  if (levelCompleted) {
+    return (
+      <Card className="card-surface">
+        <CardHeader>
+          <CardTitle>Level Complete!</CardTitle>
+        </CardHeader>
+        <CardContent className="text-center space-y-4">
+          <div className="text-6xl">🎉</div>
+          <p className="text-lg">Congratulations! You've completed this level.</p>
+          <p className="text-muted-foreground">
+            Score: {score}/{level.questions.length} | Attempts: {attempts}
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <section className="grid gap-6">
       <Card className="card-surface">
         <CardHeader>
-          <CardTitle>Fractions basics</CardTitle>
+          <CardTitle>{level.title}</CardTitle>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>Question {currentQuestionIndex + 1} of {level.questions.length}</span>
+            <span>•</span>
+            <span>Score: {score}/{level.questions.length}</span>
+          </div>
         </CardHeader>
         <CardContent className="grid gap-6">
-          {content}
+          {selectedContent || fallbackContent}
         </CardContent>
       </Card>
 
       <Card className="card-surface">
         <CardHeader>
-          <CardTitle>Quick check (Level {difficulty})</CardTitle>
+          <CardTitle>Question {currentQuestionIndex + 1}</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4">
-          <p className="font-medium">{question.prompt}</p>
+          <p className="font-medium text-lg">{currentQuestion.prompt}</p>
+          
           <div className="grid gap-2 sm:grid-cols-2">
-            {question.options.map((opt, i) => (
+            {currentQuestion.options.map((opt, i) => (
               <button
                 key={i}
                 onClick={() => setSelected(i)}
-                className={`rounded-md border px-4 py-2 text-left transition ${
-                  selected === i ? "bg-accent" : "hover:bg-accent/60"
+                className={`rounded-md border px-4 py-3 text-left transition ${
+                  selected === i ? "bg-accent border-primary" : "hover:bg-accent/60"
                 }`}
               >
                 {opt}
               </button>
             ))}
           </div>
+
+          {result && (
+            <div className={`p-4 rounded-lg ${
+              result === "Correct!" ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"
+            }`}>
+              <p className={`font-medium ${
+                result === "Correct!" ? "text-green-800" : "text-red-800"
+              }`}>
+                {result}
+              </p>
+              {showExplanation && (
+                <p className="text-sm text-green-700 mt-2">
+                  {currentQuestion.explanation}
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="flex items-center gap-3">
-            <Button onClick={submit}>Submit</Button>
-            {result && <span className="text-sm text-muted-foreground">{result}</span>}
+            {!result ? (
+              <Button onClick={submit} disabled={selected === null}>
+                Submit Answer
+              </Button>
+            ) : result === "Correct!" ? (
+              <Button onClick={nextQuestion}>
+                {isLastQuestion ? "Complete Level" : "Next Question"}
+              </Button>
+            ) : (
+              <Button onClick={retryQuestion} variant="outline">
+                Try Again
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>

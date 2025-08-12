@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import SEO from "@/components/SEO";
 import StyleSurvey from "@/components/StyleSurvey";
-import AdaptiveLesson from "@/components/AdaptiveLesson";
+import LevelManager from "@/components/LevelManager";
 import type { LearningStyle } from "@/types/learning";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 const Learn = () => {
   const [style, setStyle] = useState<LearningStyle | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const saved = localStorage.getItem("learningStyle") as LearningStyle | null;
@@ -14,6 +16,11 @@ const Learn = () => {
   }, []);
 
   const reset = () => setStyle(null);
+
+  const handleGoHome = () => {
+    
+    navigate("/");
+  };
 
   return (
     <>
@@ -24,7 +31,7 @@ const Learn = () => {
       />
       <main className="container py-12">
         <header className="mb-8 flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Your adaptive lesson</h1>
+          <h1 className="text-3xl font-bold">Your adaptive learning journey</h1>
           {style && (
             <Button variant="outline" onClick={reset}>
               Change learning style
@@ -36,7 +43,10 @@ const Learn = () => {
           {!style ? (
             <StyleSurvey onComplete={(s) => setStyle(s)} />
           ) : (
-            <AdaptiveLesson style={style} />
+            <LevelManager 
+              style={style} 
+              onGoHome={handleGoHome}
+            />
           )}
         </section>
       </main>
