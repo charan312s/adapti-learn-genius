@@ -4,7 +4,7 @@ export interface LearningLevel {
   id: number;
   title: string;
   description: string;
-  difficulty: 1 | 2 | 3;
+  difficulty: 1 | 2 | 3 | 4;
   questions: Question[];
   content: {
     visual: string;

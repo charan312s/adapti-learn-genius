@@ -81,7 +81,7 @@ const LEARNING_LEVELS: LearningLevel[] = [
     id: 3,
     title: "Adding Fractions",
     description: "Learn to add fractions with common denominators",
-    difficulty: 2,
+    difficulty: 3,
     requiredScore: 3,
     unlocked: false,
     questions: [
@@ -115,7 +115,7 @@ const LEARNING_LEVELS: LearningLevel[] = [
     id: 4,
     title: "Advanced Fractions",
     description: "Master complex fraction operations",
-    difficulty: 3,
+    difficulty: 4,
     requiredScore: 4,
     unlocked: false,
     questions: [
