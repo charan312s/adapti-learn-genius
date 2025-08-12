@@ -10,7 +10,6 @@ import AdaptiveLesson from "./AdaptiveLesson";
 
 interface LevelManagerProps {
   style: LearningStyle;
-  onGoHome: () => void;
 }
 
 // Define the learning levels
@@ -153,7 +152,7 @@ const LEARNING_LEVELS: LearningLevel[] = [
   }
 ];
 
-const LevelManager = ({ style, onGoHome }: LevelManagerProps) => {
+const LevelManager = ({ style }: LevelManagerProps) => {
   const [levels, setLevels] = useState<LearningLevel[]>(LEARNING_LEVELS);
   const [progress, setProgress] = useState<LevelProgress[]>([]);
   const [currentLevel, setCurrentLevel] = useState<LearningLevel | null>(null);
@@ -237,9 +236,6 @@ const LevelManager = ({ style, onGoHome }: LevelManagerProps) => {
           <Button variant="outline" onClick={() => setCurrentLevel(null)}>
             ← Back to Levels
           </Button>
-          <Button variant="outline" onClick={onGoHome}>
-            🏠 Go Home
-          </Button>
         </div>
         
         {/* Learning Style Display in Level View */}
@@ -275,9 +271,6 @@ const LevelManager = ({ style, onGoHome }: LevelManagerProps) => {
           <h2 className="text-2xl font-bold">Learning Levels</h2>
           <p className="text-muted-foreground">Complete levels to unlock new challenges</p>
         </div>
-        <Button variant="outline" onClick={onGoHome}>
-          🏠 Go Home
-        </Button>
       </div>
 
       {/* Learning Style Display */}

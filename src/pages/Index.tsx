@@ -37,12 +37,14 @@ const Index = () => {
       <header className="w-full">
         <nav className="container flex items-center justify-between py-6">
           <Link to="/" className="flex items-center gap-2">
-            <span className="text-base font-semibold">AIPersonal</span>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary-glow rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">AI</span>
+              </div>
+              <span className="text-xl font-bold gradient-text">Personal</span>
+            </div>
           </Link>
           <div className="flex items-center gap-4">
-            <Link to="/learn" className="text-sm underline-offset-4 hover:underline">
-              Learn
-            </Link>
             <Link to="/learn">
               <Button variant="hero" size="lg">Start learning</Button>
             </Link>
