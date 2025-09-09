@@ -40,6 +40,63 @@ const AdaptiveLesson = ({ level, style, onComplete }: AdaptiveLessonProps) => {
     }
   };
 
+  const [hint, setHint] = useState<string | null>(null);
+  const [loadingHint, setLoadingHint] = useState(false);
+
+  // Parse backend hint into { hint, next }
+  const parseHint = (raw: string) => {
+    if (!raw) return { hint: '', next: '' };
+    // Normalize separators
+    const normalized = raw.replace(/\r/g, '\n');
+    const sanitize = (s: string) => {
+      if (!s) return '';
+      // Remove all asterisks and common markdown emphasis markers
+      let out = s.replace(/\*/g, '');
+      // Remove surrounding quotes and excessive whitespace
+      out = out.replace(/^\s*["'“”]+/, '').replace(/["'“”]+\s*$/, '');
+      out = out.replace(/\s+/g, ' ').trim();
+      return out;
+    };
+    // Look for common 'Next' separators
+    const nextMarkers = [/Next step:\s*/i, /Next:\s*/i, /Next steps?:\s*/i, /Suggestion:\s*/i];
+    for (const m of nextMarkers) {
+      const idx = normalized.search(m);
+      if (idx >= 0) {
+        const before = normalized.slice(0, idx).trim();
+        const after = normalized.slice(idx).replace(m, '').trim();
+        // Use the first line of 'before' as hint and everything in 'after' as next
+        return { hint: sanitize(before), next: sanitize(after) };
+      }
+    }
+
+    // Fallback: split by double newlines
+  const parts = normalized.split(/\n\n+/).map(p => p.trim()).filter(Boolean);
+  return { hint: sanitize(parts[0] || ''), next: sanitize(parts[1] || '') };
+  };
+
+  const fetchHint = async () => {
+    try {
+      setLoadingHint(true);
+      setHint(null);
+      const token = localStorage.getItem('authToken');
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/ai/hint`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: token ? `Bearer ${token}` : undefined },
+        body: JSON.stringify({ prompt: currentQuestion.prompt }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setHint(data.hint);
+      } else {
+        setHint('No hint available');
+      }
+    } catch (e) {
+      setHint('Failed to fetch hint');
+    } finally {
+      setLoadingHint(false);
+    }
+  };
+
   const nextQuestion = () => {
     if (isLastQuestion) {
       // Level completed
@@ -487,6 +544,46 @@ const AdaptiveLesson = ({ level, style, onComplete }: AdaptiveLessonProps) => {
                 Try Again
               </Button>
             )}
+            <div className="ml-auto text-right flex flex-col items-end gap-2">
+              <Button
+                onClick={fetchHint}
+                disabled={loadingHint}
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-pink-500 hover:from-indigo-700 hover:to-pink-600 text-white shadow-lg"
+              >
+                <span className="text-xl">🤖</span>
+                <span className="font-semibold">{loadingHint ? 'Thinking...' : 'AI Hint'}</span>
+              </Button>
+
+              {hint && (
+                (() => {
+                  const parts = parseHint(hint);
+                  return (
+                    <div className="mt-2 w-full max-w-md bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl shadow-xl p-4 animate-fade-in">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="inline-flex items-center gap-2 px-2 py-1 rounded-full bg-gradient-to-r from-indigo-50 to-pink-50 text-xs font-medium text-indigo-700 dark:text-indigo-200">
+                            <span className="text-sm">🤖</span>
+                            <span>AI Hint</span>
+                          </div>
+                          <h4 className="mt-3 text-sm font-semibold">Hint</h4>
+                        </div>
+                        <button onClick={() => setHint(null)} className="text-sm text-muted-foreground hover:text-foreground">✕</button>
+                      </div>
+
+                      <div className="mt-2 text-sm text-foreground">
+                        <p className="leading-relaxed">{parts.hint}</p>
+                        {parts.next && (
+                          <div className="mt-3 p-3 bg-gray-50 dark:bg-slate-800 border rounded">
+                            <div className="text-xs font-semibold text-muted-foreground">Next step</div>
+                            <div className="mt-1 text-sm">{parts.next}</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
