@@ -153,7 +153,7 @@ const LEARNING_LEVELS: LearningLevel[] = [
 ];
 
 const LevelManager = ({ style }: LevelManagerProps) => {
-  const [levels, setLevels] = useState<LearningLevel[]>(LEARNING_LEVELS);
+  const [levels, setLevels] = useState<LearningLevel[]>(() => LEARNING_LEVELS);
   const [progress, setProgress] = useState<LevelProgress[]>([]);
   const [currentLevel, setCurrentLevel] = useState<LearningLevel | null>(null);
 
@@ -161,13 +161,20 @@ const LevelManager = ({ style }: LevelManagerProps) => {
     // Load progress from localStorage
     const savedProgress = localStorage.getItem("levelProgress");
     if (savedProgress) {
-      const parsed = JSON.parse(savedProgress);
-      // Convert ISO strings back to Date objects
-      const progressWithDates = parsed.map((p: any) => ({
-        ...p,
-        completedAt: p.completedAt ? new Date(p.completedAt) : undefined
-      }));
-      setProgress(progressWithDates);
+      try {
+        const parsed = JSON.parse(savedProgress) as Array<LevelProgress & { completedAt?: string }>;
+        // Convert ISO strings back to Date objects
+        const progressWithDates: LevelProgress[] = parsed.map((p) => ({
+          levelId: p.levelId,
+          completed: !!p.completed,
+          score: p.score,
+          attempts: p.attempts,
+          completedAt: p.completedAt ? new Date(p.completedAt) : undefined
+        }));
+        setProgress(progressWithDates);
+      } catch {
+        // ignore malformed data
+      }
     }
   }, []);
 
@@ -197,9 +204,12 @@ const LevelManager = ({ style }: LevelManagerProps) => {
   };
 
   const handleLevelComplete = (levelId: number, score: number, attempts: number) => {
+    const levelObj = levels.find(l => l.id === levelId);
+    const requiredScore = levelObj ? levelObj.requiredScore : 0;
+
     const newProgress: LevelProgress = {
       levelId,
-      completed: score >= levels.find(l => l.id === levelId)?.requiredScore!,
+      completed: score >= requiredScore,
       score,
       attempts,
       completedAt: new Date()
@@ -214,7 +224,7 @@ const LevelManager = ({ style }: LevelManagerProps) => {
       }
     });
 
-    toast.success(`Level ${levelId} completed! Score: ${score}/${levels.find(l => l.id === levelId)?.questions.length}`);
+  toast.success(`Level ${levelId} completed! Score: ${score}/${levelObj ? levelObj.questions.length : 0}`);
     
     // Return to level selection
     setCurrentLevel(null);
@@ -251,6 +261,7 @@ const LevelManager = ({ style }: LevelManagerProps) => {
               <p className="text-sm text-muted-foreground">
                 Content is tailored to your {style} learning preferences
               </p>
+              {/* subject removed: content tailored only by learning style */}
             </div>
           </CardContent>
         </Card>
@@ -327,9 +338,10 @@ const LevelManager = ({ style }: LevelManagerProps) => {
                     ) : (
                       <Play className="h-5 w-5 text-primary" />
                     )}
-                    <Badge variant={level.difficulty === 1 ? "secondary" : level.difficulty === 2 ? "default" : "destructive"}>
-                      Level {level.difficulty}
-                    </Badge>
+                        <Badge variant={level.difficulty === 1 ? "secondary" : level.difficulty === 2 ? "default" : "destructive"}>
+                          Level {level.difficulty}
+                        </Badge>
+                        {/* subject badges removed */}
                   </div>
                 </div>
                 <p className="text-sm text-muted-foreground">{level.description}</p>

@@ -63,6 +63,11 @@ const AdaptiveLesson = ({ level, style, onComplete }: AdaptiveLessonProps) => {
   // Content by learning style
   const ReadingBlock = (
     <div className="prose prose-sm dark:prose-invert max-w-none">
+      {/** show subject context when available */}
+      {level && typeof (undefined) !== 'undefined' && null}
+      
+      {/** subjectName will be injected by parent if available via prop */}
+      {/* placeholder - will render subjectName above specific sections when provided */}
       {level.id === 1 && (
         <>
           <p>
@@ -118,6 +123,7 @@ const AdaptiveLesson = ({ level, style, onComplete }: AdaptiveLessonProps) => {
 
   const VisualBlock = (
     <div className="grid gap-4">
+  {/* Subject context shown above visual examples if provided */}
       {level.id === 1 && (
         <>
           <svg viewBox="0 0 100 100" className="w-full max-w-xs">
@@ -209,6 +215,7 @@ const AdaptiveLesson = ({ level, style, onComplete }: AdaptiveLessonProps) => {
   const [d, setD] = useState(4);
   const KinestheticBlock = (
     <div className="grid gap-3">
+  {/* Kinesthetic examples may reference the subject if provided */}
       {level.id === 1 && (
         <>
           <div className="flex items-center gap-3">
@@ -410,7 +417,12 @@ const AdaptiveLesson = ({ level, style, onComplete }: AdaptiveLessonProps) => {
     <section className="grid gap-6">
       <Card className="card-surface">
         <CardHeader>
-          <CardTitle>{level.title}</CardTitle>
+          <CardTitle className="flex items-center gap-3">
+            <span>{level.title}</span>
+            {/** show subject name if passed */}
+            {/** subjectName prop is available from parent */}
+            {/** render below when provided */}
+          </CardTitle>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span>Question {currentQuestionIndex + 1} of {level.questions.length}</span>
             <span>•</span>
@@ -418,6 +430,7 @@ const AdaptiveLesson = ({ level, style, onComplete }: AdaptiveLessonProps) => {
           </div>
         </CardHeader>
         <CardContent className="grid gap-6">
+          {/* subject context removed */}
           {selectedContent || fallbackContent}
         </CardContent>
       </Card>

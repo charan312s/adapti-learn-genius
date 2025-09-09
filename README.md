@@ -1,73 +1,258 @@
-# Welcome to your Lovable project
+# 🚀 AdaptiLearn - AI-Powered Adaptive Learning Platform
 
-## Project info
+A modern, intelligent learning platform that adapts lessons and quizzes to your progress and preferred learning style, helping you master topics faster.
 
-**URL**: https://lovable.dev/projects/b6922c2b-aa31-41ac-859d-c31150d0f7fb
+## ✨ Features
 
-## How can I edit this code?
+### 🔐 Authentication System
+- **User Registration & Login**: Secure sign-up and sign-in with JWT tokens
+- **Profile Management**: User profiles with learning preferences
+- **Session Management**: Persistent authentication with secure token storage
 
-There are several ways of editing your application.
+### 🧠 Adaptive Learning
+- **Learning Style Detection**: Personalized content based on your learning preferences
+- **Progress Tracking**: Monitor your learning journey across different subjects
+- **Dynamic Content**: Content adapts based on your performance and style
 
-**Use Lovable**
+### 🎨 Modern UI/UX
+- **Beautiful Design**: Modern, responsive interface with gradient effects
+- **Interactive Elements**: Spotlight effects and smooth animations
+- **Mobile Responsive**: Works seamlessly across all devices
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/b6922c2b-aa31-41ac-859d-c31150d0f7fb) and start prompting.
+## 🛠️ Tech Stack
 
-Changes made via Lovable will be committed automatically to this repo.
+### Frontend
+- **React 18** with TypeScript
+- **Vite** for fast development and building
+- **Tailwind CSS** for styling
+- **React Router** for navigation
+- **Shadcn/ui** components for consistent design
 
-**Use your preferred IDE**
+### Backend
+- **Java 17** with Spring Boot 3.2.0
+- **Spring Security** for authentication
+- **Spring Data MongoDB** for data persistence
+- **JWT** for stateless authentication
+- **Maven** for dependency management
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Database
+- **MongoDB Atlas** for cloud-hosted, scalable data storage
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## 🚀 Quick Start
 
-Follow these steps:
+### Prerequisites
+- Node.js 18+ and npm/yarn
+- Java 17+
+- Maven 3.6+
+- MongoDB Atlas account
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### 1. MongoDB Atlas Setup
+First, set up your MongoDB Atlas database:
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+1. **Create MongoDB Atlas Account**: Sign up at [MongoDB Atlas](https://www.mongodb.com/atlas)
+2. **Create Cluster**: Choose the FREE tier (M0)
+3. **Set Up Database User**: Create a username and password
+4. **Configure Network Access**: Allow access from your IP (or 0.0.0.0/0 for development)
+5. **Get Connection String**: Copy your MongoDB Atlas connection string
 
-# Step 3: Install the necessary dependencies.
-npm i
+📖 **Detailed Setup Guide**: See [MongoDB Atlas Setup Guide](backend/MONGODB_ATLAS_SETUP.md)
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+### 2. Environment Configuration
+
+#### Frontend Setup
+```bash
+# Copy environment template
+cp env.frontend .env
+
+# Edit .env file with your backend URL
+VITE_API_BASE_URL=http://localhost:8080/api
 ```
 
-**Edit a file directly in GitHub**
+#### Backend Setup
+```bash
+cd backend
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+# Copy environment template
+cp env.backend .env
 
-**Use GitHub Codespaces**
+# Edit .env file with your MongoDB Atlas connection string
+MONGODB_ATLAS_URI=mongodb+srv://your_username:your_password@your_cluster.mongodb.net/adaptilearn?retryWrites=true&w=majority
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### 3. Start the Application
 
-## What technologies are used for this project?
+#### Backend
+```bash
+cd backend
 
-This project is built with:
+# Install dependencies
+mvn clean install
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+# Start the application
+mvn spring-boot:run
+```
 
-## How can I deploy this project?
+#### Frontend
+```bash
+# Install dependencies
+npm install
 
-Simply open [Lovable](https://lovable.dev/projects/b6922c2b-aa31-41ac-859d-c31150d0f7fb) and click on Share -> Publish.
+# Start development server
+npm run dev
 
-## Can I connect a custom domain to my Lovable project?
+# Build for production
+npm run build
+```
 
-Yes, you can!
+## 📁 Project Structure
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+```
+adapti-learn-genius/
+├── src/                          # Frontend source code
+│   ├── components/               # React components
+│   │   ├── auth/                # Authentication components
+│   │   ├── ui/                  # UI components
+│   │   └── ...                  # Other components
+│   ├── contexts/                # React contexts
+│   ├── pages/                   # Page components
+│   └── types/                   # TypeScript type definitions
+├── backend/                      # Spring Boot backend
+│   ├── src/main/java/           # Java source code
+│   │   └── com/adaptilearn/
+│   │       ├── config/          # Configuration classes
+│   │       ├── controller/      # REST controllers
+│   │       ├── dto/            # Data Transfer Objects
+│   │       ├── model/          # Entity models
+│   │       ├── repository/     # Data access layer
+│   │       ├── security/       # Security utilities
+│   │       └── service/        # Business logic
+│   ├── src/main/resources/     # Configuration files
+│   ├── MONGODB_ATLAS_SETUP.md  # MongoDB Atlas setup guide
+│   └── pom.xml                 # Maven configuration
+├── env.frontend                 # Frontend environment template
+└── README.md                    # This file
+```
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## 🔐 Authentication Flow
+
+1. **Registration**: Users create accounts with username, email, and password
+2. **Login**: Users authenticate with username/email and password
+3. **JWT Token**: Secure token-based authentication for API requests
+4. **Protected Routes**: Learning content requires authentication
+5. **Session Persistence**: Tokens stored securely in localStorage
+
+## 📚 API Endpoints
+
+### Authentication
+- `POST /api/auth/signup` - User registration
+- `POST /api/auth/signin` - User login
+- `POST /api/auth/validate` - Token validation
+- `GET /api/auth/health` - Health check
+
+### Learning
+- `GET /api/learn/levels` - Get learning levels
+- `POST /api/learn/progress` - Update learning progress
+- `GET /api/learn/style` - Get user learning style
+
+## 🎯 Learning Features
+
+### Learning Styles
+- **Visual**: Diagrams, charts, and visual aids
+- **Auditory**: Audio explanations and discussions
+- **Reading**: Text-based content and written materials
+- **Kinesthetic**: Interactive exercises and hands-on activities
+
+### Adaptive Content
+- Content adjusts based on your learning style
+- Difficulty levels adapt to your progress
+- Personalized recommendations and feedback
+
+## 🔧 Development
+
+### Frontend Development
+```bash
+# Start development server
+npm run dev
+
+# Run tests
+npm test
+
+# Lint code
+npm run lint
+```
+
+### Backend Development
+```bash
+cd backend
+
+# Run with hot reload
+mvn spring-boot:run
+
+# Run tests
+mvn test
+
+# Build JAR
+mvn clean package
+```
+
+## 🚀 Deployment
+
+### Frontend
+```bash
+npm run build
+# Deploy the dist/ folder to your hosting service
+```
+
+### Backend
+```bash
+cd backend
+mvn clean package
+# Deploy the generated JAR file
+```
+
+### Database
+- **MongoDB Atlas**: Your database is already cloud-hosted
+- **Backup**: MongoDB Atlas provides automatic backups
+- **Scaling**: Easily scale your database as needed
+
+## 🔒 Security
+
+### Environment Variables
+- Never commit `.env` files to version control
+- Use strong, unique passwords for database access
+- Generate secure JWT secrets for production
+
+### MongoDB Atlas Security
+- Use IP whitelisting for production
+- Enable MongoDB Atlas monitoring
+- Set up alerts for unusual activity
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🆘 Support
+
+- **Documentation**: Check the README files in each directory
+- **MongoDB Atlas Setup**: See [MongoDB Atlas Setup Guide](backend/MONGODB_ATLAS_SETUP.md)
+- **Issues**: Create an issue in the repository
+- **Email**: support@adaptilearn.com
+
+## 🙏 Acknowledgments
+
+- Built with modern web technologies
+- Inspired by adaptive learning principles
+- Designed for optimal user experience
+- Powered by MongoDB Atlas for reliable data storage
+
+---
+
+**Happy Learning! 🎓✨**

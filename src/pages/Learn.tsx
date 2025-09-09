@@ -4,25 +4,62 @@ import StyleSurvey from "@/components/StyleSurvey";
 import LevelManager from "@/components/LevelManager";
 import type { LearningStyle } from "@/types/learning";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { Home } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Learn = () => {
   const [style, setStyle] = useState<LearningStyle | null>(null);
   const navigate = useNavigate();
   const [spotPos, setSpotPos] = useState({ x: 50, y: 50 });
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const { isAuthenticated, user, logout } = useAuth();
+  interface Profile { username?: string; firstName?: string; lastName?: string; learningStyle?: string; cgpa?: number; numArrears?: number; email?: string }
 
   useEffect(() => {
-    const saved = localStorage.getItem("learningStyle") as LearningStyle | null;
-    if (saved) setStyle(saved);
-  }, []);
+    // Redirect to signin if not authenticated
+    if (!isAuthenticated) {
+      navigate('/signin');
+      return;
+    }
+
+    // Check if user already has a learning style
+    if (user?.learningStyle) {
+      setStyle(user.learningStyle as LearningStyle);
+    }
+  }, [isAuthenticated, user, navigate]);
+
+  // No subject fetching on learn page
+
+  // No interests/recommendation flows for now
 
   const reset = () => setStyle(null);
 
-  const handleGoHome = () => {
-    navigate("/");
+  const [profile, setProfile] = useState<Profile | null>(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem('authToken');
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/learn/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data: Profile = await res.json();
+          setProfile(data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch profile', err);
+      }
+    };
+    if (isAuthenticated) fetchProfile();
+  }, [isAuthenticated]);
+
+  const handleSignOut = () => {
+    logout();
+    navigate('/');
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -33,6 +70,11 @@ const Learn = () => {
     const y = ((e.clientY - rect.top) / rect.height) * 100;
     setSpotPos({ x, y });
   };
+
+  // Show loading or redirect if not authenticated
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <>
@@ -59,6 +101,9 @@ const Learn = () => {
                 Home
               </Button>
             </Link>
+            <Button variant="outline" size="lg" onClick={handleSignOut}>
+              Sign Out
+            </Button>
           </div>
         </nav>
       </header>
@@ -67,17 +112,16 @@ const Learn = () => {
         <section
           ref={containerRef}
           onMouseMove={handleMouseMove}
-          className="spotlight"
-          style={{
-            ...(null as unknown as React.CSSProperties),
-            ["--spot-x" as any]: `${spotPos.x}%`,
-            ["--spot-y" as any]: `${spotPos.y}%`,
-          }}
+    className="spotlight"
+        style={((): CSSProperties => {
+          const cssVars = { ['--spot-x']: `${spotPos.x}%`, ['--spot-y']: `${spotPos.y}%` } as unknown as CSSProperties;
+          return cssVars;
+        })()}
         >
           <div className="container grid gap-10 py-16 md:grid-cols-2 md:gap-12 md:py-24">
             <div className="flex flex-col justify-center">
               <h1 className="text-4xl font-bold leading-tight md:text-6xl gradient-text">
-                Your Adaptive Learning Journey
+                Welcome, {user?.firstName || 'Learner'}!
               </h1>
               <p className="mt-5 max-w-prose text-lg text-muted-foreground">
                 Take a quick style survey and start an adaptive lesson tailored to how you learn best. We'll personalize your experience to help you master topics faster.
@@ -91,6 +135,17 @@ const Learn = () => {
               )}
             </div>
             <div className="relative">
+              {profile && (
+                <div className="absolute right-6 top-6 card-surface p-3 rounded flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center font-semibold">{(profile.firstName || profile.username || '').slice(0,1).toUpperCase()}</div>
+                  <div>
+                    <div className="font-semibold">{profile.firstName} {profile.lastName}</div>
+                    <div className="text-sm text-muted-foreground">{profile.username}</div>
+                    {profile.cgpa != null && <div className="text-sm">CGPA: {profile.cgpa}</div>}
+                    {profile.numArrears != null && <div className="text-sm">Arrears: {profile.numArrears}</div>}
+                  </div>
+                </div>
+              )}
               <div className="card-surface rounded-xl p-8 h-full flex items-center justify-center">
                 {!style ? (
                   <div className="text-center">
@@ -113,11 +168,13 @@ const Learn = () => {
         <section className="container py-12">
           <div className="grid gap-8">
             {!style ? (
-              <StyleSurvey onComplete={(s) => setStyle(s)} />
+              <StyleSurvey onComplete={(s) => { setStyle(s); }} />
             ) : (
-              <LevelManager 
-                style={style} 
-              />
+              <>
+                <LevelManager 
+                  style={style} 
+                />
+              </>
             )}
           </div>
         </section>

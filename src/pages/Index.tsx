@@ -3,10 +3,12 @@ import heroImage from "@/assets/hero-learning.jpg";
 import { Link } from "react-router-dom";
 import SEO from "@/components/SEO";
 import { useState, useRef, type CSSProperties } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const [spotPos, setSpotPos] = useState({ x: 50, y: 50 });
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const { isAuthenticated, logout } = useAuth();
 
   const handleMouseMove = (e: React.MouseEvent) => {
     const el = containerRef.current;
@@ -45,9 +47,25 @@ const Index = () => {
             </div>
           </Link>
           <div className="flex items-center gap-4">
-            <Link to="/learn">
-              <Button variant="hero" size="lg">Start learning</Button>
-            </Link>
+            {isAuthenticated ? (
+              <>
+                <Link to="/learn">
+                  <Button variant="outline" size="lg">Continue Learning</Button>
+                </Link>
+                <Button variant="outline" size="lg" onClick={logout}>
+                  Sign Out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link to="/signin">
+                  <Button variant="outline" size="lg">Sign In</Button>
+                </Link>
+                <Link to="/signup">
+                  <Button variant="hero" size="lg">Get Started</Button>
+                </Link>
+              </>
+            )}
           </div>
         </nav>
       </header>
@@ -72,12 +90,20 @@ const Index = () => {
                 A beautiful adaptive learning experience. We tailor lessons and quizzes to your progress and preferred learning style, helping you master topics faster.
               </p>
               <div className="mt-8 flex items-center gap-4">
-                <Link to="/learn">
-                  <Button variant="hero" size="xl">Start learning</Button>
-                </Link>
-                <Link to="/learn">
-                  <Button variant="outline" size="lg">Try a quick lesson</Button>
-                </Link>
+                {isAuthenticated ? (
+                  <Link to="/learn">
+                    <Button variant="hero" size="xl">Continue Learning</Button>
+                  </Link>
+                ) : (
+                  <>
+                    <Link to="/signup">
+                      <Button variant="hero" size="xl">Get Started</Button>
+                    </Link>
+                    <Link to="/signin">
+                      <Button variant="outline" size="lg">Sign In</Button>
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
             <div className="relative">

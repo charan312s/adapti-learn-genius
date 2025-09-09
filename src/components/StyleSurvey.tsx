@@ -18,6 +18,7 @@ const options: { value: LearningStyle; label: string; helper: string }[] = [
 
 const StyleSurvey = ({ onComplete }: StyleSurveyProps) => {
   const [value, setValue] = useState<LearningStyle | "">("");
+  // Only capture learning style for now
 
   const handleSubmit = () => {
     if (!value) return;
